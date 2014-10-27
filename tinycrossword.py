@@ -388,11 +388,11 @@ if __name__ == "__main__":
 			solution = db_query(postgres)
 			if None in solution:
 				# wait to post a new puzzle
-				waitToTweet(6, 0) # noon PST
+				waitToTweet(20, 0) # noon PST
 				post_new_puzzle(postgres)
 			else:
 				# wait to post a solution
-				waitToTweet(6, 30) # 12:30pm PST
+				waitToTweet(20, 30) # 12:30pm PST
 				post_solution(solution)
 				db_clear(postgres)
 		except:
