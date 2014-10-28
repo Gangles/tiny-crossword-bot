@@ -5,6 +5,7 @@ import datetime
 import math
 import os
 import psycopg2
+import pytz
 import random
 import re
 import string
@@ -15,7 +16,7 @@ import wikipedia
 from PIL import Image
 from text_unidecode import unidecode
 from twython import Twython
-from wikipedia import DisambiguationError
+from wikipedia.exceptions import DisambiguationError, HTTPTimeoutError
 
 def db_connect():
 	# connect to the postgres database
@@ -85,14 +86,19 @@ def get_summary(topic, attempts=0):
 		return wikipedia.summary(topic, sentences=2)
 	except DisambiguationError as e:
 		return ""
+	except HTTPTimeoutError as e:
+		return ""
 
 def get_new_words(crossword_hints):
 	remove_brackets = re.compile(r' \([^)]*\)')
 	remove_topic_punc = re.compile(r'^([^,\(]*)')
 	remove_hint_punc = re.compile(r'^([^.;:!?\(]*)')
 
-	random_topics = wikipedia.random(pages=10)
-	print "Getting random topics from Wikipedia..."
+	try:
+		print "Getting random topics from Wikipedia..."
+		random_topics = wikipedia.random(pages=10)
+	except HTTPTimeoutError as e:
+		random_topics = []
 
 	for wiki_topic in random_topics:
 		# reject some topics right away
@@ -367,8 +373,8 @@ def post_solution(solution):
 	post_tweet(twitter, to_tweet, image_name, tweet_id)
 
 def waitToTweet(hour, minute):
-	# tweet at the given hour in unix time
-	now = datetime.datetime.utcnow()
+	# tweet at the given hour in pacific time
+	now = datetime.datetime.now(pytz.timezone('US/Pacific'))
 	wait = 60 - now.second
 	wait += (59 + minute - now.minute) * 60
 	if now.hour < hour:
@@ -388,11 +394,11 @@ if __name__ == "__main__":
 			solution = db_query(postgres)
 			if None in solution:
 				# wait to post a new puzzle
-				waitToTweet(20, 0) # noon PST
+				waitToTweet(12, 0) # noon
 				post_new_puzzle(postgres)
 			else:
 				# wait to post a solution
-				waitToTweet(21, 0) # 1pm PST
+				waitToTweet(13, 0) # 1pm
 				post_solution(solution)
 				db_clear(postgres)
 		except:
