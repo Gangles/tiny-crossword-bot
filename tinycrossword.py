@@ -72,6 +72,10 @@ def db_clear(postgres):
 	postgres.commit()
 	cur.close()
 
+def print_safe(to_print):
+	# heroku doesn't like unicode
+	print to_print.encode('ascii', 'ignore')
+
 def substring_after(s, delims):
 	# get the longest substring after the given delim
 	part = ''
@@ -95,7 +99,7 @@ def get_new_words(crossword_hints):
 	remove_hint_punc = re.compile(r'^([^.;:!?\(]*)')
 
 	try:
-		print "Getting random topics from Wikipedia..."
+		print_safe("Getting random topics from Wikipedia...")
 		random_topics = wikipedia.random(pages=10)
 	except HTTPTimeoutError as e:
 		random_topics = []
@@ -118,7 +122,7 @@ def get_new_words(crossword_hints):
 			continue
 		
 		time.sleep(1) # be kind to wikipedia's servers
-		print "Getting summary for " + wiki_topic + "..."
+		print_safe("Getting summary for " + wiki_topic + "...")
 		summary = get_summary(wiki_topic)
 
 		if summary:
@@ -284,7 +288,7 @@ def connect_twitter():
 
 def post_tweet(twitter, to_tweet, image_name, reply_to=None):
 	# post the string and the image to twitter
-	print to_tweet.encode('ascii', 'ignore')
+	print_safe(to_tweet)
 	puzzle_image = open(image_name, 'rb')
 	return twitter.update_status_with_media(status=to_tweet,
 		media=puzzle_image, in_reply_to_status_id=reply_to)
@@ -294,16 +298,19 @@ def post_new_puzzle(postgres):
 	wikipedia.set_lang('simple')
 	wikipedia.set_rate_limiting(True)
 	crossword_hints = []
+	attempts = 0
 	while len(crossword_hints) < 3:
+		assert attempts < 30, "Too many attempts"
 		crossword_hints = get_new_words(crossword_hints)
-
+		attempts += 1
+	
 	# sort the words, longest first
 	crossword_hints = sorted(crossword_hints, key=lambda x:len(x['crossword']))
 	crossword_hints.reverse()
 
 	for word in crossword_hints:
-		print word['topic'] + " / " + word['crossword']
-		print word['hint'] + "\n"
+		print_safe(word['topic'] + " / " + word['crossword'])
+		print_safe(word['hint'] + "\n")
 
 	matrix, solved = None, None
 	while not matrix:
@@ -312,12 +319,14 @@ def post_new_puzzle(postgres):
 
 		# if not, add words and random shuffle
 		if not matrix:
-			print "Can't make crossword, retrying..."
+			print_safe("Can't make crossword, retrying...")
 			if random.random() < 0.33:
+				assert attempts < 30, "Too many attempts"
 				crossword_hints = get_new_words(crossword_hints)
+				attempts += 1
 			random.shuffle(crossword_hints)
 
-	print matrix_to_string(solved)
+	print_safe(matrix_to_string(solved))
 
 	# make an image out of the matrix
 	image_name = make_puzzle_image(matrix, 'puzzle.gif')
@@ -381,7 +390,7 @@ def waitToTweet(hour, minute):
 		wait += (hour - 1 - now.hour) * 60 * 60
 	else:
 		wait += (hour + 23 - now.hour) * 60 * 60
-	print "Wait " + str(wait) + " seconds for next tweet"
+	print_safe("Wait " + str(wait) + " seconds for next tweet")
 	time.sleep(wait)
 
 if __name__ == "__main__":
@@ -394,11 +403,11 @@ if __name__ == "__main__":
 			solution = db_query(postgres)
 			if None in solution:
 				# wait to post a new puzzle
-				waitToTweet(12, 0) # noon
+				waitToTweet(22, 00) # noon
 				post_new_puzzle(postgres)
 			else:
 				# wait to post a solution
-				waitToTweet(13, 0) # 1pm
+				waitToTweet(23, 00) # 1pm
 				post_solution(solution)
 				db_clear(postgres)
 		except:
