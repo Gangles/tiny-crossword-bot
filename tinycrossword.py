@@ -381,11 +381,11 @@ def post_solution(solution):
 	# post the solution to twitter as a reply
 	post_tweet(twitter, to_tweet, image_name, tweet_id)
 
-def waitToTweet(hour, minute):
+def waitToTweet(hour):
 	# tweet at the given hour in pacific time
 	now = datetime.datetime.now(pytz.timezone('US/Pacific'))
 	wait = 60 - now.second
-	wait += (59 + minute - now.minute) * 60
+	wait += (59 - now.minute) * 60
 	if now.hour < hour:
 		wait += (hour - 1 - now.hour) * 60 * 60
 	else:
@@ -403,11 +403,11 @@ if __name__ == "__main__":
 			solution = db_query(postgres)
 			if None in solution:
 				# wait to post a new puzzle
-				waitToTweet(22, 00) # noon
+				waitToTweet(12) # noon
 				post_new_puzzle(postgres)
 			else:
 				# wait to post a solution
-				waitToTweet(23, 00) # 1pm
+				waitToTweet(13) # 1pm
 				post_solution(solution)
 				db_clear(postgres)
 		except:
