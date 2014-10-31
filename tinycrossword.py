@@ -421,7 +421,7 @@ if __name__ == "__main__":
 				post_new_puzzle(postgres)
 			else:
 				# wait to post a solution
-				# waitToTweet(13) # 1pm
+				waitToTweet(14) # 2pm
 				post_solution(solution)
 				db_clear(postgres)
 		except:
