@@ -1,7 +1,11 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import blacklist
 import config
 import copy
 import datetime
+import logging
 import math
 import os
 import psycopg2
@@ -74,7 +78,10 @@ def db_clear(postgres):
 
 def print_safe(to_print):
 	# heroku doesn't like unicode
-	print to_print.encode('ascii', 'ignore')
+	try:
+		print unidecode(to_print)
+	except UnicodeDecodeError as e:
+		logging.exception("Unicode Decode error")
 
 def substring_after(s, delims):
 	# get the longest substring after the given delim
@@ -132,6 +139,7 @@ def get_new_words(crossword_hints):
 			hint_lower = hint.lower()
 			if 'commune' in hint_lower: continue
 			if 'city' in hint_lower: continue
+			if 'small town' in hint_lower: continue
 			if 'tower' in hint_lower: continue
 			if 'actor' in hint_lower: continue
 			if 'actress' in hint_lower: continue
@@ -165,7 +173,9 @@ def get_new_words(crossword_hints):
 
 def get_crossword_string(topic):
 	# return upper case alphanumeric only
-	topic = unidecode(topic.upper())
+	topic = unidecode(topic)
+	topic = re.sub('&', 'AND', topic)
+	topic = topic.upper()
 	only_alphanumeric = re.compile('[\W]+')
 	return only_alphanumeric.sub('', topic)
 
@@ -337,7 +347,7 @@ def post_new_puzzle(postgres):
 	to_tweet += "3: " + crossword_hints[2]['hint']
 	twitter = connect_twitter()
 	response = post_tweet(twitter, to_tweet, image_name)
-	assert response['id'], "Failed posting to Twitter"
+	assert response['id'], "Failed posting puzzle to Twitter"
 
 	# store the puzzle in the database
 	db_insert(postgres, response['id'], crossword_hints, solved)
@@ -346,7 +356,8 @@ def reply_contains(reply, topics):
 	# are all 3 answers in the given reply?
 	crossword_reply = get_crossword_string(reply)
 	for topic in topics:
-		if not get_crossword_string(topic) in crossword_reply:
+		crossword_topic = get_crossword_string(topic)
+		if not crossword_topic in crossword_reply:
 			return False
 	return True
 
@@ -360,8 +371,10 @@ def get_correct_answer(twitter, tweet_id, topics):
 	return None
 
 def post_solution(solution):
-	tweet_id, t1, t2, t3, matrix_string = solution
+	print_safe("Posting puzzle solution")
 
+	# assemble the tweet string
+	tweet_id, t1, t2, t3, matrix_string = solution
 	to_tweet = "SOLUTION\n"
 	to_tweet += "1: " + t1 + "\n"
 	to_tweet += "2: " + t2 + "\n"
@@ -379,7 +392,8 @@ def post_solution(solution):
 	image_name = make_puzzle_image(matrix, 'solution.gif', True)
 
 	# post the solution to twitter as a reply
-	post_tweet(twitter, to_tweet, image_name, tweet_id)
+	response = post_tweet(twitter, to_tweet, image_name, tweet_id)
+	assert response['id'], "Failed posting puzzle to Twitter"
 
 def waitToTweet(hour):
 	# tweet at the given hour in pacific time
@@ -397,7 +411,7 @@ if __name__ == "__main__":
 	# initialize database
 	postgres = db_connect()
 	db_init(postgres)
-
+	
 	while True:
 		try:
 			solution = db_query(postgres)
@@ -407,9 +421,9 @@ if __name__ == "__main__":
 				post_new_puzzle(postgres)
 			else:
 				# wait to post a solution
-				waitToTweet(13) # 1pm
+				# waitToTweet(13) # 1pm
 				post_solution(solution)
 				db_clear(postgres)
 		except:
-			print "Error:", sys.exc_info()[0]
+			logging.exception("Exception")
 		time.sleep(10)
