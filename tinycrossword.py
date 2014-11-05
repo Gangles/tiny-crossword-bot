@@ -133,6 +133,9 @@ def get_new_words(crossword_hints):
 		summary = get_summary(wiki_topic)
 
 		if summary:
+			# avoid disambiguation blurbs
+			if 'this article is about' in summary.lower(): continue
+
 			# get the description of the topic
 			hint = substring_after(summary, [' is ', ' was ', ' are ', ' were '])
 
@@ -146,6 +149,8 @@ def get_new_words(crossword_hints):
 			if 'singer' in hint_lower: continue
 			if 'football player' in hint_lower: continue
 			if 'footballer' in hint_lower: continue
+			if 'figure skater' in hint_lower: continue
+			if 'racing driver' in hint_lower: continue
 			if 'soccer player' in hint_lower: continue
 			if 'basketball player' in hint_lower: continue
 			if 'baseball player' in hint_lower: continue
@@ -393,7 +398,7 @@ def post_solution(solution):
 
 	# post the solution to twitter as a reply
 	response = post_tweet(twitter, to_tweet, image_name, tweet_id)
-	assert response['id'], "Failed posting puzzle to Twitter"
+	assert response['id'], "Failed posting solution to Twitter"
 
 def waitToTweet(hour):
 	# tweet at the given hour in pacific time
