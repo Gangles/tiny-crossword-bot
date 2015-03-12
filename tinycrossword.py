@@ -248,13 +248,16 @@ def get_puzzle_matrix(crossword_hints):
 			solved[row][column] = middle[column]
 
 			# check if it's time to write one of the vertical words
-			if first_match and first_match in middle[column] and column < (width / 2):
+			if first_match and first_match in middle[column] and column < (width / 2) and column > 0:
 				write_column(matrix, solved, row - first_index, column, first, '2')
 				first_match = None
 			elif second_match and second_match in middle[column] and column > (width / 2):
 				write_column(matrix, solved, row - second_index, column, second, '3')
 				second_match = None
 
+		assert not first_match, "Failed to write first vertical word."
+		assert not second_match, "Failed to write second vertical word."
+		
 		return (matrix, solved, width, height)
 	else:
 		return (None, None, 0, 0)
