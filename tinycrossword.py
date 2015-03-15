@@ -34,9 +34,13 @@ def db_connect():
 	    port = url.port
 	)
 
+def db_verify_connection(postgres):
+	assert postgres, "No database connection"
+	assert not postgres.closed, "Connection unexpectedly closed"
+
 def db_init(postgres):
 	# make sure the db table exists
-	assert postgres, "No database connection"
+	db_verify_connection(postgres)
 	cur = postgres.cursor()
 	cur.execute('CREATE TABLE IF NOT EXISTS puzzles ('
 				'tweet_id varchar(30) PRIMARY KEY, '
@@ -48,7 +52,7 @@ def db_init(postgres):
 
 def db_query(postgres):
 	# check if a solution is waiting to be tweeted
-	assert postgres, "No database connection"
+	db_verify_connection(postgres)
 	cur = postgres.cursor()
 	cur.execute('SELECT * FROM puzzles;')
 	row = cur.fetchone()
@@ -57,7 +61,7 @@ def db_query(postgres):
 
 def db_insert(postgres, tweet_id, crossword_hints, matrix):
 	# record the puzzle and solution
-	assert postgres, "No database connection"
+	db_verify_connection(postgres)
 	t1 = crossword_hints[0]['topic']
 	t2 = crossword_hints[1]['topic']
 	t3 = crossword_hints[2]['topic']
@@ -70,7 +74,7 @@ def db_insert(postgres, tweet_id, crossword_hints, matrix):
 
 def db_clear(postgres):
 	# clear the DB table completely
-	assert postgres, "No database connection"
+	db_verify_connection(postgres)
 	cur = postgres.cursor()
 	cur.execute('TRUNCATE puzzles;')
 	postgres.commit()
@@ -426,10 +430,12 @@ if __name__ == "__main__":
 			if None in solution:
 				# wait to post a new puzzle
 				waitToTweet(12) # noon
+				db_verify_connection(postgres)
 				post_new_puzzle(postgres)
 			else:
 				# wait to post a solution
 				waitToTweet(14) # 2pm
+				db_verify_connection(postgres)
 				post_solution(solution)
 				db_clear(postgres)
 		except:
