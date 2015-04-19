@@ -144,13 +144,14 @@ def get_new_words(crossword_hints):
 			hint = substring_after(summary, [' is ', ' was ', ' are ', ' were '])
 
 			hint_lower = hint.lower()
-			if 'commune' in hint_lower: continue
-			if 'city' in hint_lower: continue
-			if 'small town' in hint_lower: continue
-			if 'tower' in hint_lower: continue
-			if 'actor' in hint_lower: continue
-			if 'actress' in hint_lower: continue
-			if 'singer' in hint_lower: continue
+			if ' commune ' in hint_lower: continue
+			if ' parish ' in hint_lower: continue
+			if ' district ' in hint_lower: continue
+			if ' town ' in hint_lower: continue
+			if ' county ' in hint_lower: continue
+			if ' actor' in hint_lower: continue
+			if ' actress' in hint_lower: continue
+			if ' singer' in hint_lower: continue
 			if 'football player' in hint_lower: continue
 			if 'footballer' in hint_lower: continue
 			if 'figure skater' in hint_lower: continue
