@@ -148,6 +148,8 @@ def get_new_words(crossword_hints):
 			if ' parish ' in hint_lower: continue
 			if ' district ' in hint_lower: continue
 			if ' town ' in hint_lower: continue
+			if ' rayon of ' in hint_lower: continue
+			if ' municipality in ' in hint_lower: continue
 			if ' county ' in hint_lower: continue
 			if ' actor' in hint_lower: continue
 			if ' actress' in hint_lower: continue
