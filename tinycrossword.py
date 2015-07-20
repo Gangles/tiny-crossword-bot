@@ -116,11 +116,11 @@ def get_new_words(crossword_hints):
 		random_topics = []
 
 	for wiki_topic in random_topics:
-		# reject some topics right away
+		# reject some vague topics right away
 		topic_lower = wiki_topic.lower()
 		if ' in ' in topic_lower: continue
 		if 'list of ' in topic_lower: continue
-		if 'iowa' in topic_lower: continue
+		if 'iowa' in topic_lower: continue # too many
 		if blacklist.isOffensive(wiki_topic): continue
 
 		# clean up the topic string
@@ -143,6 +143,7 @@ def get_new_words(crossword_hints):
 			# get the description of the topic
 			hint = substring_after(summary, [' is ', ' was ', ' are ', ' were '])
 
+			# reject hints that are too vague to solve
 			hint_lower = hint.lower()
 			if ' commune ' in hint_lower: continue
 			if ' parish ' in hint_lower: continue
@@ -270,14 +271,14 @@ def get_puzzle_matrix(crossword_hints):
 		return (None, None, 0, 0)
 
 def matrix_to_string(matrix):
-	# convert the 2d matrix into one long string
+	# convert the 2D matrix into one long string
 	tostring = ""
 	for row in xrange(len(matrix)):
 		tostring += "".join(matrix[row]) + "\n"
 	return tostring
 
 def make_puzzle_image(matrix, name, solution=False):
-	# make an image file from the given 2d matrix
+	# make an image file from the given 2D matrix
 	width, height = len(matrix[0]), len(matrix) 
 	tiles = {}
 	tiles['.'] = Image.open('./tiles/black.gif')
@@ -367,23 +368,30 @@ def post_new_puzzle(postgres):
 	# store the puzzle in the database
 	db_insert(postgres, response['id'], crossword_hints, solved)
 
-def reply_contains(reply, topics):
-	# are all 3 answers in the given reply?
+def correct_reply_count(reply, topics):
+	# how many answers are in the given reply?
 	crossword_reply = get_crossword_string(reply)
+	count = 0
 	for topic in topics:
-		crossword_topic = get_crossword_string(topic)
-		if not crossword_topic in crossword_reply:
-			return False
-	return True
+		if get_crossword_string(topic) in crossword_reply:
+			count += 1
+	return count
 
 def get_correct_answer(twitter, tweet_id, topics):
-	# find an @-mention that contains all 3 answers
+	# count the correct answers in each @-mention
 	replies = twitter.get_mentions_timeline(count=200, since_id=tweet_id)
 	replies.reverse() # oldest first
+	best = {'name' : None, 'count' : 0}
 	for reply in replies:
-		if reply_contains(reply['text'], topics):
-			return reply['user']['screen_name']
-	return None
+		correct_count = correct_reply_count(reply['text'], topics)
+		if correct_count > best['count']:
+			best['name'] = reply['user']['screen_name']
+			best['count'] = correct_count
+			# break early if 3/3 answers found
+			if best['count'] > 2:
+				break
+	# return the highest number of correct answers
+	return best
 
 def post_solution(solution):
 	print_safe("Posting puzzle solution")
@@ -395,12 +403,18 @@ def post_solution(solution):
 	to_tweet += "2: " + t2 + "\n"
 	to_tweet += "3: " + t3
 
-	# see if anyone replied with a correct answer
+	# credit anyone who replied with correct answers
 	twitter = connect_twitter()
-	correct_answer = get_correct_answer(twitter, tweet_id, [t1, t2, t3])
-	if correct_answer:
-		to_tweet += "\nFirst correct answer by @" + correct_answer
+	answer = get_correct_answer(twitter, tweet_id, [t1, t2, t3])
+	if answer and answer['name'] and answer['count'] > 2:
+		# someone solved all three
+		to_tweet += "\nFirst correct answer by @" + answer['name']
 		to_tweet += u" \U0001F389" # party popper
+	elif answer and answer['name'] and answer['count'] > 0:
+		# someone provided a partial answer
+		to_tweet += "\n@" + answer['name']
+		to_tweet += " had a partial solution [" + answer['count'] + "/3]"
+		to_tweet += u" \U0001F31F" # glowing star
 
 	# assemble an image with the solution
 	matrix = matrix_string.rstrip().split('\n')
