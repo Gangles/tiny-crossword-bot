@@ -413,7 +413,7 @@ def post_solution(solution):
 	elif answer and answer['name'] and answer['count'] > 0:
 		# someone provided a partial answer
 		to_tweet += "\n@" + answer['name']
-		to_tweet += " had a partial solution [" + answer['count'] + "/3]"
+		to_tweet += " had a partial solution [" + str(answer['count']) + "/3]"
 		to_tweet += u" \U0001F31F" # glowing star
 
 	# assemble an image with the solution
