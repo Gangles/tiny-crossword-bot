@@ -7,7 +7,7 @@ Tiny Crossword is a daily game played publicly on Twitter. The [@TinyCrossword](
 
 The puzzle elements are drawn from the [Simple English Wikipedia](https://simple.wikipedia.org/wiki/Main_Page) API. New puzzles are procedurally generated using up-to-date terms and concepts, with no additional designer input.
 
-Tiny Crossword is designed to be hosted on [Heroku](https://dashboard.heroku.com/), and uses the following open source libraries:
+Tiny Crossword is designed to be hosted on [Heroku](https://www.heroku.com/), and uses the following open source libraries:
 
 * [Python Imaging Library](https://github.com/python-pillow/Pillow)
 * [Python-PostgreSQL Database Adapter](https://github.com/psycopg/psycopg2)
