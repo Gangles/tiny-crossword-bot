@@ -424,7 +424,7 @@ def post_solution(solution):
 	response = post_tweet(twitter, to_tweet, image_name, tweet_id)
 	assert response['id'], "Failed posting solution to Twitter"
 
-def waitToTweet(hour):
+def timeToWait(hour):
 	# tweet at the given hour in pacific time
 	now = datetime.datetime.now(pytz.timezone('US/Pacific'))
 	wait = 60 - now.second
@@ -433,28 +433,40 @@ def waitToTweet(hour):
 		wait += (hour - 1 - now.hour) * 60 * 60
 	else:
 		wait += (hour + 23 - now.hour) * 60 * 60
+	return wait
+
+def waitToTweet(hour):
+	# heroku scheduler runs every 10 minutes
+	wait = timeToWait(hour)
 	print_safe("Wait " + str(wait) + " seconds for next tweet")
-	time.sleep(wait)
+	if wait > 10 * 60:
+		sys.exit(0)
+	else:
+		time.sleep(wait)
 
 if __name__ == "__main__":
 	# initialize database
 	postgres = db_connect()
 	db_init(postgres)
 	
-	while True:
-		try:
-			solution = db_query(postgres)
-			if None in solution:
-				# wait to post a new puzzle
-				waitToTweet(12) # noon
-				db_verify_connection(postgres)
-				post_new_puzzle(postgres)
-			else:
-				# wait to post a solution
-				waitToTweet(14) # 2pm
-				db_verify_connection(postgres)
-				post_solution(solution)
-				db_clear(postgres)
-		except:
-			logging.exception("Exception")
-		time.sleep(10)
+	try:
+		solution = db_query(postgres)
+		if None in solution:
+			# wait to post a new puzzle
+			waitToTweet(12) # noon
+			db_verify_connection(postgres)
+			post_new_puzzle(postgres)
+			sys.exit(0)
+		else:
+			# wait to post a solution
+			waitToTweet(14) # 2pm
+			db_verify_connection(postgres)
+			post_solution(solution)
+			db_clear(postgres)
+			sys.exit(0)
+	except SystemExit as e:
+		# working as intended, exit normally
+		sys.exit(e)
+	except:
+		logging.exception("Exception")
+
