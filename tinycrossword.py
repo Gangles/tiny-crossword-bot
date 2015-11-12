@@ -155,6 +155,7 @@ def get_new_words(crossword_hints):
 			if ' actor' in hint_lower: continue
 			if ' actress' in hint_lower: continue
 			if ' singer' in hint_lower: continue
+			if ' a swimmer ' in hint_lower: continue
 			if 'football player' in hint_lower: continue
 			if 'footballer' in hint_lower: continue
 			if 'figure skater' in hint_lower: continue
@@ -385,7 +386,7 @@ def get_correct_answer(twitter, tweet_id, topics):
 	for reply in replies:
 		correct_count = correct_reply_count(reply['text'], topics)
 		if correct_count > best['count']:
-			best['name'] = reply['user']['screen_name']
+			best['name'] = unidecode(reply['user']['screen_name'])
 			best['count'] = correct_count
 			# break early if 3/3 answers found
 			if best['count'] > 2:
@@ -397,24 +398,27 @@ def post_solution(solution):
 	print_safe("Posting puzzle solution")
 
 	# assemble the tweet string
+	twitter = connect_twitter()
 	tweet_id, t1, t2, t3, matrix_string = solution
 	to_tweet = "SOLUTION\n"
 	to_tweet += "1: " + t1 + "\n"
 	to_tweet += "2: " + t2 + "\n"
 	to_tweet += "3: " + t3
 
-	# credit anyone who replied with correct answers
-	twitter = connect_twitter()
-	answer = get_correct_answer(twitter, tweet_id, [t1, t2, t3])
-	if answer and answer['name'] and answer['count'] > 2:
-		# someone solved all three
-		to_tweet += "\nFirst correct answer by @" + answer['name']
-		to_tweet += u" \U0001F389" # party popper
-	elif answer and answer['name'] and answer['count'] > 0:
-		# someone provided a partial answer
-		to_tweet += "\n@" + answer['name']
-		to_tweet += " had a partial solution [" + str(answer['count']) + "/3]"
-		to_tweet += u" \U0001F31F" # glowing star
+	try:
+		# credit anyone who replied with correct answers
+		answer = get_correct_answer(twitter, tweet_id, [t1, t2, t3])
+		if answer and answer['name'] and answer['count'] > 2:
+			# someone solved all three
+			to_tweet += "\nFirst correct answer by @" + answer['name']
+			to_tweet += u" \U0001F389" # party popper
+		elif answer and answer['name'] and answer['count'] > 0:
+			# someone provided a partial answer
+			to_tweet += "\n@" + answer['name']
+			to_tweet += " had a partial solution [" + str(answer['count']) + "/3]"
+			to_tweet += u" \U0001F31F" # glowing star
+	except:
+		logging.exception("Error getting answers from @-replies")
 
 	# assemble an image with the solution
 	matrix = matrix_string.rstrip().split('\n')
@@ -469,4 +473,3 @@ if __name__ == "__main__":
 		sys.exit(e)
 	except:
 		logging.exception("Exception")
-
