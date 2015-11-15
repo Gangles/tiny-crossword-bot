@@ -359,9 +359,9 @@ def post_new_puzzle(postgres):
 	image_name = make_puzzle_image(matrix, 'puzzle.gif')
 
 	# tweet the image and hints
-	to_tweet =  "1: " + crossword_hints[0]['hint'] + "\n"
-	to_tweet += "2: " + crossword_hints[1]['hint'] + "\n"
-	to_tweet += "3: " + crossword_hints[2]['hint']
+	to_tweet =  u"1: %s\n" % (crossword_hints[0]['hint'])
+	to_tweet += u"2: %s\n" % (crossword_hints[1]['hint'])
+	to_tweet += u"3: %s"   % (crossword_hints[2]['hint'])
 	twitter = connect_twitter()
 	response = post_tweet(twitter, to_tweet, image_name)
 	assert response['id'], "Failed posting puzzle to Twitter"
@@ -386,7 +386,7 @@ def get_correct_answer(twitter, tweet_id, topics):
 	for reply in replies:
 		correct_count = correct_reply_count(reply['text'], topics)
 		if correct_count > best['count']:
-			best['name'] = unidecode(reply['user']['screen_name'])
+			best['name'] = reply['user']['screen_name']
 			best['count'] = correct_count
 			# break early if 3/3 answers found
 			if best['count'] > 2:
@@ -400,22 +400,22 @@ def post_solution(solution):
 	# assemble the tweet string
 	twitter = connect_twitter()
 	tweet_id, t1, t2, t3, matrix_string = solution
-	to_tweet = "SOLUTION\n"
-	to_tweet += "1: " + t1 + "\n"
-	to_tweet += "2: " + t2 + "\n"
-	to_tweet += "3: " + t3
+	to_tweet =  u"SOLUTION\n"
+	to_tweet += u"1: %s\n" % (t1)
+	to_tweet += u"2: %s\n" % (t2)
+	to_tweet += u"3: %s" % (t3)
 
 	try:
 		# credit anyone who replied with correct answers
 		answer = get_correct_answer(twitter, tweet_id, [t1, t2, t3])
 		if answer and answer['name'] and answer['count'] > 2:
 			# someone solved all three
-			to_tweet += "\nFirst correct answer by @" + answer['name']
+			to_tweet += u"\nFirst correct answer by @%s" % (answer['name'])
 			to_tweet += u" \U0001F389" # party popper
 		elif answer and answer['name'] and answer['count'] > 0:
 			# someone provided a partial answer
-			to_tweet += "\n@" + answer['name']
-			to_tweet += " had a partial solution [" + str(answer['count']) + "/3]"
+			to_tweet += u"\n@%s had a partial solution " % (answer['name'])
+			to_tweet += u"[%d/3]" % (answer['count'])
 			to_tweet += u" \U0001F31F" # glowing star
 	except:
 		logging.exception("Error getting answers from @-replies")
