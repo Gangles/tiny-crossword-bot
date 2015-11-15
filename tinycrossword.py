@@ -132,7 +132,6 @@ def get_new_words(crossword_hints):
 		if len(topic) > 20 or len(topic) < 3 or len(topic.split()) > 4:
 			continue
 		
-		time.sleep(1) # be kind to wikipedia's servers
 		print_safe("Getting summary for " + wiki_topic + "...")
 		summary = get_summary(wiki_topic)
 
@@ -437,6 +436,8 @@ def timeToWait(hour):
 		wait += (hour - 1 - now.hour) * 60 * 60
 	else:
 		wait += (hour + 23 - now.hour) * 60 * 60
+	# tweet a little early if necessary
+	if wait <= 10 * 60: wait = min(wait, 590)
 	return wait
 
 def waitToTweet(hour):
