@@ -172,6 +172,7 @@ def get_new_words(crossword_hints):
 
 			# clean up the hint string
 			hint = re.sub(r'U\.S\.', 'US', hint)
+			hint = re.sub(r'D\.C\.', 'DC', hint)
 			hint = re.sub(remove_brackets, '', hint)
 			hint = re.search(remove_hint_punc, hint).group(0)
 			hint = hint.strip()
@@ -358,9 +359,9 @@ def post_new_puzzle(postgres):
 	image_name = make_puzzle_image(matrix, 'puzzle.gif')
 
 	# tweet the image and hints
-	to_tweet =  u"1: %s\n" % (crossword_hints[0]['hint'])
-	to_tweet += u"2: %s\n" % (crossword_hints[1]['hint'])
-	to_tweet += u"3: %s"   % (crossword_hints[2]['hint'])
+	to_tweet =  u"1: %s\n" % (crossword_hints[0]['hint'].decode('utf8'))
+	to_tweet += u"2: %s\n" % (crossword_hints[1]['hint'].decode('utf8'))
+	to_tweet += u"3: %s"   % (crossword_hints[2]['hint'].decode('utf8'))
 	twitter = connect_twitter()
 	response = post_tweet(twitter, to_tweet, image_name)
 	assert response['id'], "Failed posting puzzle to Twitter"
@@ -400,9 +401,9 @@ def post_solution(solution):
 	twitter = connect_twitter()
 	tweet_id, t1, t2, t3, matrix_string = solution
 	to_tweet =  u"SOLUTION\n"
-	to_tweet += u"1: %s\n" % (t1)
-	to_tweet += u"2: %s\n" % (t2)
-	to_tweet += u"3: %s" % (t3)
+	to_tweet += u"1: %s\n" % (t1.decode('utf8'))
+	to_tweet += u"2: %s\n" % (t2.decode('utf8'))
+	to_tweet += u"3: %s" % (t3.decode('utf8'))
 
 	try:
 		# credit anyone who replied with correct answers
