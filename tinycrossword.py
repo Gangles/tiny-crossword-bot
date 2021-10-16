@@ -31,7 +31,8 @@ def db_connect():
 	    user = url.username,
 	    password = url.password,
 	    host = url.hostname,
-	    port = url.port
+	    port = url.port,
+	    sslmode = 'require'
 	)
 
 def db_verify_connection(postgres):
