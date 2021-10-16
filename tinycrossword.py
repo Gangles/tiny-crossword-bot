@@ -15,7 +15,7 @@ import re
 import string
 import sys
 import time
-import urlparse
+import urllib.parse
 import wikipedia
 from PIL import Image
 from text_unidecode import unidecode
@@ -24,8 +24,8 @@ from wikipedia.exceptions import DisambiguationError, HTTPTimeoutError
 
 def db_connect():
 	# connect to the postgres database
-	urlparse.uses_netloc.append("postgres")
-	url = urlparse.urlparse(os.environ["DATABASE_URL"])
+	urllib.parse.uses_netloc.append("postgres")
+	url = urllib.parse.urlparse(os.environ["DATABASE_URL"])
 	return psycopg2.connect(
 	    database = url.path[1:],
 	    user = url.username,
@@ -84,7 +84,7 @@ def db_clear(postgres):
 def print_safe(to_print):
 	# heroku doesn't like unicode
 	try:
-		print unidecode(to_print)
+		print(unidecode(to_print))
 	except UnicodeDecodeError as e:
 		logging.exception("Unicode Decode error")
 

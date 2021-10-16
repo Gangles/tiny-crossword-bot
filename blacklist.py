@@ -12,7 +12,7 @@ def isOffensive(word):
         return False
     for badword in blacklist:
         if word.lower().find(badword) >= 0:
-            print badword + " is offensive"
+            print(badword + " is offensive")
             return True
     return False
     
