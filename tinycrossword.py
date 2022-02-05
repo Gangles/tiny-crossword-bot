@@ -248,7 +248,7 @@ def get_puzzle_matrix(crossword_hints):
 		width = len(middle)
 
 		# 2d matrices for the puzzle and the solution
-		matrix = [['.' for x in xrange(width)] for x in xrange(height)]
+		matrix = [['.' for x in range(width)] for x in range(height)]
 		solved = copy.deepcopy(matrix)
 
 		row = space_above
@@ -275,7 +275,7 @@ def get_puzzle_matrix(crossword_hints):
 def matrix_to_string(matrix):
 	# convert the 2D matrix into one long string
 	tostring = ""
-	for row in xrange(len(matrix)):
+	for row in range(len(matrix)):
 		tostring += "".join(matrix[row]) + "\n"
 	return tostring
 
@@ -299,9 +299,9 @@ def make_puzzle_image(matrix, name, solution=False):
 
 	puzzle_image = Image.new('RGB', (width * 60, height * 60))
 
-	for column in xrange(width):
+	for column in range(width):
 		pos_x, pos_y = column * 60, 0
-		for row in xrange(height):
+		for row in range(height):
 			symbol = matrix[row][column]
 			puzzle_image.paste(tiles[symbol], (pos_x, pos_y))
 			pos_y += 60
